@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.pulseisland">
+
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:name=".PulseIslandApplication"
+        android:icon="@drawable/ic_launcher"
+        android:label="脉搏岛"
+        android:theme="@style/Theme.DarkGlass">
+
+        <service
+            android:name=".core.IslandService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.MainHomeActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.DisclaimerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DarkGlass" />
+
+        <activity
+            android:name=".ui.LockScreenOverlayActivity"
+            android:theme="@style/Theme.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+    </application>
+</manifest>
