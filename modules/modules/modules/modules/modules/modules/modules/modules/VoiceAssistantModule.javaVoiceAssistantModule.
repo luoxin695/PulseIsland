@@ -1,0 +1,112 @@
+package com.pulseisland.modules;
+
+import android.animation.ValueAnimator;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
+import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import androidx.annotation.NonNull;
+import com.pulseisland.core.IslandLayout;
+
+public class VoiceAssistantModule extends IslandLayout {
+    private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint statusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private boolean isActive = false;
+    private float glowRadius = 0f;
+    private String assistantName = "助手";
+    private String statusText = "聆听中...";
+    private ValueAnimator glowAnimator;
+    private RadialGradient cachedGradient;
+    private float lastGradientRadius = -1f;
+
+    public VoiceAssistantModule(Context context) {
+        super(context);
+        glowPaint.setStyle(Paint.Style.FILL);
+        textPaint.setStyle(Paint.Style.FILL);
+        textPaint.setColor(0xFFFFFFFF);
+        textPaint.setTextSize(dpToPx(9));
+        statusPaint.setStyle(Paint.Style.FILL);
+        statusPaint.setColor(0xFF94A3B8);
+        statusPaint.setTextSize(dpToPx(7));
+    }
+
+    private RadialGradient getGradient(float cx, float cy, float radius) {
+        if (cachedGradient == null || lastGradientRadius != radius) {
+            cachedGradient = new RadialGradient(cx, cy, radius,
+                    new int[]{0x60FFD700, 0x30FF6B00, 0x00FF6B00},
+                    new float[]{0f, 0.5f, 1f}, Shader.TileMode.CLAMP);
+            lastGradientRadius = radius;
+        }
+        return cachedGradient;
+    }
+
+    @Override protected void onDraw(@NonNull Canvas canvas) {
+        super.onDraw(canvas);
+        int w = getWidth(), h = getHeight();
+        boolean expanded = isExpanded();
+        float cx = w / 2f, cy = h / 2f;
+        if (isActive && glowRadius > 0) {
+            glowPaint.setShader(getGradient(cx, cy, glowRadius));
+            canvas.drawCircle(cx, cy, glowRadius, glowPaint);
+            textPaint.setColor(0xFFFFFFFF);
+            textPaint.setTextSize(expanded ? dpToPx(11) : dpToPx(9));
+            float nameX = cx - textPaint.measureText(assistantName) / 2;
+            float nameY = cy - (textPaint.ascent() + textPaint.descent()) / 2;
+            canvas.drawText(assistantName, nameX, nameY, textPaint);
+            if (expanded) {
+                statusPaint.setColor(0xFFFFD700);
+                statusPaint.setTextSize(dpToPx(8));
+                float statusX = cx - statusPaint.measureText(statusText) / 2;
+                canvas.drawText(statusText, statusX, cy + dpToPx(10), statusPaint);
+                float waveY = cy + dpToPx(16);
+                float waveSpacing = dpToPx(4);
+                for (int i = 0; i < 3; i++) {
+                    float height = dpToPx(3 + (i + 1) * 2);
+                    float x = cx - dpToPx(6) + i * waveSpacing;
+                    canvas.drawLine(x, waveY - height, x, waveY + height, statusPaint);
+                }
+            }
+        } else {
+            textPaint.setColor(0xFF64748B);
+            textPaint.setTextSize(dpToPx(9));
+            String displayText = isActive ? "正在唤醒..." : "语音";
+            float textX = cx - textPaint.measureText(displayText) / 2;
+            float textY = cy - (textPaint.ascent() + textPaint.descent()) / 2;
+            canvas.drawText(displayText, textX, textY, textPaint);
+        }
+    }
+
+    public void setActive(boolean active, String name) {
+        if (this.isActive == active && this.assistantName.equals(name)) return;
+        this.isActive = active;
+        this.assistantName = name;
+        if (glowAnimator != null && glowAnimator.isRunning()) { glowAnimator.cancel(); }
+        if (active) {
+            glowAnimator = ValueAnimator.ofFloat(0f, dpToPx(30));
+            glowAnimator.setDuration(400);
+            glowAnimator.setInterpolator(new DecelerateInterpolator());
+            glowAnimator.addUpdateListener(a -> { glowRadius = (float)a.getAnimatedValue(); invalidate(); });
+            glowAnimator.start();
+            setExpanded(true);
+        } else {
+            float startRadius = glowRadius;
+            glowAnimator = ValueAnimator.ofFloat(startRadius, 0f);
+            glowAnimator.setDuration(300);
+            glowAnimator.setInterpolator(new DecelerateInterpolator());
+            glowAnimator.addUpdateListener(a -> { glowRadius = (float)a.getAnimatedValue(); invalidate(); });
+            glowAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override public void onAnimationEnd(android.animation.Animator animation) {
+                    glowRadius = 0f;
+                    invalidate();
+                }
+            });
+            glowAnimator.start();
+            setExpanded(false);
+        }
+    }
+
+    public void setStatusTe
