@@ -56,3 +56,25 @@
         <action android:name="android.service.notification.NotificationListenerService" />
     </intent-filter>
 </service>
+// 在 IslandService.java 的 onCreate() 中添加：
+
+@Override
+public void onCreate() {
+    super.onCreate();
+
+    // 检查通知权限
+    if (!PermissionHelper.hasNotificationListenerPermission(this)) {
+        // 权限未开启，启动引导页面
+        Intent intent = new Intent(this, NotificationPermissionActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        // 注意：这里不要 return，让服务继续启动，但通知功能不工作
+        // 用户开启权限后会重新检测
+    }
+
+    // 原有代码...
+    initWindowManager();
+    initSensors();
+    createContainer();
+    addContainerToWindow();
+}
